@@ -3316,3 +3316,557 @@ book2.show_info()  # Выведет: 'To Kill a Mockingbird' by Harper Lee, publ
 Описание изменений:
 Добавлен метод `set_info`, который принимает три аргумента (`title`, `author`, `year`) и устанавливает соответствующие значения для полей объекта.
 Вызов метода `set_info` позволяет устанавливать данные книги в одну строку.
+
+## Конструкторы, переопределение методов
+
+- Конструктор — это специальный метод, который автоматически вызывается при создании нового объекта класса.
+- В Python конструктор обозначается методом `__init__`.
+- Основная задача конструктора — инициализировать объект, задав начальные значения полям.
+
+Конструктор `__init__` определяется внутри класса и принимает как минимум один параметр: `self`, который указывает на текущий экземпляр класса.
+
+```python
+class Example:
+    def __init__(self, параметр1, параметр2):
+        self.параметр1 = параметр1
+        self.параметр2 = параметр2
+```
+
+Пример конструктора
+```python
+class Book:
+    def __init__(self, title, author, year):
+        self.title = title
+        self.author = author
+        self.year = year
+
+    def show_info(self):
+        print(f"'{self.title}' by {self.author}, published in {self.year}")
+
+# Создание объекта с передачей параметров в конструктор
+book = Book("1984", "George Orwell", 1949)
+book.show_info()  # Выведет: '1984' by George Orwell, published in 1949
+```
+
+**Особенности конструктора**
+- Параметры конструктора позволяют сразу задать начальные значения полям объекта.
+- Конструктор может иметь значения по умолчанию для параметров:
+```python
+def __init__(self, title="Unknown", author="Unknown", year=0):
+    self.title = title
+    self.author = author
+    self.year = year
+```
+
+**Что такое переопределение**
+
+Переопределение методов позволяет изменять поведение унаследованных методов в дочерних классах.
+
+В дочернем классе можно создать метод с таким же именем, как и в родительском, чтобы изменить его поведение.
+
+В данном примере метод `show_info` из класса `Book` переопределяется в дочернем классе `EBook` для изменения вывода информаци
+```python
+class Book:
+    def __init__(self, title, author):
+        self.title = title
+        self.author = author
+
+    def show_info(self):
+        print(f"'{self.title}' by {self.author}")
+
+class EBook(Book):
+    def __init__(self, title, author, file_size):
+        super().__init__(title, author)  # Вызов конструктора родительского класса
+        self.file_size = file_size
+
+    # Переопределение метода show_info
+    def show_info(self):
+        print(f"'{self.title}' by {self.author} - {self.file_size}MB")
+
+# Создание объекта класса EBook
+ebook = EBook("1984", "George Orwell", 1.5)
+ebook.show_info()  # Выведет: '1984' by George Orwell - 1.5MB
+```
+
+**Использование `super()`**
+
+- `super()` позволяет вызвать методы и конструкторы родительского класса.
+- В примере выше `super().__init__(title, author)` вызывает конструктор класса `Book`, чтобы установить `title` и `author`.
+
+Резюмируя, конструкторы нужны для начальной настройки объектов, устанавливая начальные значения их атрибутов.
+Переопределение методов используется для изменения поведения методов родительских классов в дочерних.
+
+## Наследование, полиморфизм, инкапсуляция
+
+**Наследование** — это механизм ООП, позволяющий одному классу (дочернему) получить свойства и методы другого класса (родительского).
+
+Оно позволяет создать новый класс на основе существующего, расширяя или изменяя его функционал.
+
+```python
+class ParentClass:
+    # Поля и методы родительского класса
+    pass
+
+class ChildClass(ParentClass):
+    # Дополнительные поля и методы дочернего класса
+    pass
+```
+
+Пример наследования
+```python
+class Animal:
+    def speak(self):
+        print("Animal speaks")
+
+class Dog(Animal):
+    def bark(self):
+        print("Dog barks")
+
+dog = Dog()
+dog.speak()  # Наследованный метод: Animal speaks
+dog.bark()   # Собственный метод: Dog barks
+```
+
+Особенности наследования
+- Дочерний класс может использовать методы и поля родительского класса.
+- Дочерний класс может переопределить методы родительского класса для изменения их поведения.
+
+**Полиморфизм** — это когда один интерфейс (метод или функция) может работать с разными типами объектов, предоставляя общее поведение для них. Например, у объектов разных классов может быть метод с одинаковым именем, но разным поведением в зависимости от класса.
+
+Благодаря полиморфизму разные классы могут иметь методы с одинаковыми именами, но с разной реализацией.
+```python
+class Cat:
+    def speak(self):
+        print("Meow")
+
+class Dog:
+    def speak(self):
+        print("Bark")
+
+def animal_sound(animal):
+    animal.speak()  # Вызывается метод speak, независимо от типа животного
+
+cat = Cat()
+dog = Dog()
+
+animal_sound(cat)  # Meow
+animal_sound(dog)  # Bark
+```
+
+Здесь `animal_sound` принимает любой объект, у которого есть метод `sound`. Python не заботится о типе объекта; он проверяет только, существует ли у объекта данный метод.
+
+Полиморфизм часто используется при наследовании, когда в дочерних классах переопределяются методы базового класса, что позволяет их использовать по-разному.
+
+```python
+class Animal:
+    def make_sound(self):
+        raise NotImplementedError("Subclass must implement this method")
+
+class Cat(Animal):
+    def make_sound(self):
+        return "Meow"
+
+class Dog(Animal):
+    def make_sound(self):
+        return "Woof"
+
+# Функция, которая вызывает метод make_sound, работает для всех подклассов Animal
+def call_sound(animal: Animal):
+    print(animal.make_sound())
+
+# Применяем полиморфизм:
+cat = Cat()
+dog = Dog()
+
+call_sound(cat)  # Выведет: Meow
+call_sound(dog)  # Выведет: Woof
+```
+
+Здесь `call_sound` может работать с любым подклассом `Animal`, который реализует метод `make_sound`. Это позволяет вызывать метод с разной реализацией, соответствующей конкретному классу.
+
+
+Часто полиморфизм используется в программах, где несколько классов могут обрабатывать различные состояния или задачи, но вызываются они единым образом. Представьте, что нужно обработать несколько типов файлов, каждый из которых загружается и обрабатывается по-разному, но для всех вызывается метод `process`.
+
+```python
+class PDFFile:
+    def process(self):
+        return "Processing PDF file"
+
+class ImageFile:
+    def process(self):
+        return "Processing image file"
+
+class TextFile:
+    def process(self):
+        return "Processing text file"
+
+def process_file(file):
+    print(file.process())
+
+# Создание разных объектов
+pdf = PDFFile()
+image = ImageFile()
+text = TextFile()
+
+# Полиморфный вызов одного метода
+process_file(pdf)    # Выведет: Processing PDF file
+process_file(image)  # Выведет: Processing image file
+process_file(text)   # Выведет: Processing text file
+```
+
+Здесь метод process вызывается для разных типов файлов, но каждый раз работает специфично для типа файла, что является примером практического полиморфизма.
+
+При вызове метода у объекта-наследника Python сначала ищет метод в самом классе-наследнике. Если он найден, Python выполнит его вместо метода из базового класса. Если такого метода нет, тогда он обратится к базовому классу.
+
+Если нужно не просто заменить метод базового класса, а дополнить его, используется функция `super()`. Она вызывает метод базового класса из наследника.
+
+```python
+class Animal:
+    def make_sound(self):
+        return "Some generic sound"
+
+class Dog(Animal):
+    def make_sound(self):
+        # Используем super() для вызова метода из базового класса
+        base_sound = super().make_sound()
+        return f"{base_sound} and Bark!"
+
+# Создаем объект
+dog = Dog()
+print(dog.make_sound())  # Выведет: Some generic sound and Bark!
+```
+
+Здесь `super().make_sound()` вызывает метод `make_sound` базового класса `Animal`, а затем добавляет к его результату новую строку, создавая комбинированный вывод.
+
+**Когда использовать переопределение метода?**
+
+Когда поведение в наследуемом классе должно отличаться. Например, если у разных животных уникальные звуки.
+Для добавления новой функциональности к базовому методу — в этом случае `super()` позволяет сначала выполнить родительский метод, а затем добавить специфичное для подкласса поведение.
+
+
+Полиморфизм позволяет писать универсальный код, который может работать с различными типами объектов.
+
+Это делает код более гибким и расширяемым — новые классы могут быть добавлены без изменения логики основного кода.
+
+В Python, благодаря динамической типизации, можно применять полиморфизм к объектам, у которых нет общего класса-предка, но есть одинаковые методы (как в примере с `PDFFile`, `ImageFile`, `TextFile`).
+
+**Инкапсуляция** — это механизм ограничения доступа к данным и методам внутри объекта, чтобы предотвратить несанкционированное вмешательство.
+
+В Python доступ к атрибутам можно ограничить, добавив символы подчеркивания (`_` или `__`):
+- Одно подчеркивание `_` перед именем атрибута делает его защищённым (`protected`).
+- Два подчеркивания `__` делают атрибут приватным (`private`).
+
+```python
+class Car:
+    def __init__(self, make, model):
+        self.make = make          # Публичное поле
+        self._model = model       # Защищённое поле
+        self.__year = 2020        # Приватное поле
+
+    def display(self):
+        print(f"{self.make} {self._model}, Year: {self.__year}")
+
+car = Car("Toyota", "Corolla")
+print(car.make)     # Toyota
+print(car._model)   # Corolla (доступ есть, но не рекомендуется)
+# print(car.__year)  # Ошибка: AttributeError
+car.display()       # Toyota Corolla, Year: 2020
+```
+
+**Особенности инкапсуляции:**
+
+- Публичные поля доступны везде.
+- **Одинарное подчёркивание `_`**: Атрибуты или методы, начинающиеся с `_`, считаются защищёнными (`protected`) по соглашению. Это указывает другим разработчикам, что они предназначены для внутреннего использования и не должны использоваться извне. Однако Python не запрещает доступ к ним.
+
+    ```python
+    class Example:
+        def __init__(self):
+            self._protected_var = "I'm protected, please respect my privacy!"
+
+    obj = Example()
+    print(obj._protected_var)  # Доступ разрешён, но не рекомендуется
+    ```
+
+- **Двойное подчёркивание `__`**: Атрибуты или методы, начинающиеся с `__`, считаются приватными (`private`). Python применяет маскировку имён (`name mangling`) к таким атрибутам, добавляя к ним имя класса. Это предотвращает случайный доступ к ним извне класса, но всё ещё не является абсолютным ограничением.
+
+```python
+class Example:
+    def __init__(self):
+        self.__private_var = "I'm private, more restricted than protected"
+
+obj = Example()
+# print(obj.__private_var)  # Ошибка: AttributeError
+print(obj._Example__private_var)  # Обход ограничения с name mangling
+```
+
+Используя obj._Example__private_var, можно всё же получить доступ к приватному атрибуту.
+
+- Философия Python: Python следует принципу "Мы все здесь взрослые люди" ("We are all consenting adults here"), что означает доверие к разработчику, чтобы он соблюдал соглашения и не злоупотреблял доступом к защищённым и приватным данным.
+
+Python инкапсуляция считается более гибкой, чем жёсткой, и позволяет обращаться к атрибутам, которые технически должны быть защищёнными или приватными. Это удобно для тестирования и отладки, но требует от разработчиков соблюдения соглашений, чтобы не нарушать целостность данных.
+
+**Другими словами:**
+
+Инкапсуляция в Python основана на соглашениях, а не на строгих ограничениях. Приватные атрибуты можно обойти через `name mangling`, так что безопасность данных здесь относительно условна.
+
+`Name mangling` (дословно «искажение имени») — это механизм Python, используемый для предотвращения случайного доступа к приватным атрибутам и методам класса. Когда атрибут или метод начинается с двойного подчёркивания (`__`) и не заканчивается им, Python автоматически преобразует его имя, добавляя перед ним имя класса. Это помогает избежать конфликтов в именах при наследовании и намекает на то, что атрибут не предназначен для внешнего использования.
+
+Когда вы объявляете атрибут с двумя подчёркиваниями, например, `__attribute`, Python преобразует его имя, добавляя перед ним `_ClassName`. Таким образом, `__attribute` в классе `Example` станет `_Example__attribute`.
+```python
+class Example:
+    def __init__(self):
+        self.__private_var = "I'm private"
+
+    def get_private_var(self):
+        return self.__private_var  # доступ к приватной переменной внутри класса
+
+obj = Example()
+
+# Попытка прямого доступа вызывает ошибку
+# print(obj.__private_var)  # Ошибка: AttributeError
+
+# Правильный способ — доступ к приватной переменной через метод класса
+print(obj.get_private_var())  # Вывод: I'm private
+
+# Обход name mangling, доступ возможен так:
+print(obj._Example__private_var)  # Вывод: I'm private
+```
+
+Особенности `name mangling`:
+
+- `Зачем нужен:` `Name mangling` помогает разработчикам создавать приватные атрибуты, чтобы случайно не переопределить их в дочерних классах или других частях кода.
+- `Когда применяется:` Только для атрибутов и методов с начальным `__`, но без завершающего подчёркивания. Например, `__attribute` преобразуется, а `_attribute` и `__attribute__` остаются как есть.
+- Не является строгой защитой: Хотя `name mangling` затрудняет доступ, это не блокировка. Доступ к этим атрибутам возможен при необходимости, хотя и нежелательно.
+
+## Декораторы
+
+Декораторы в Python — это специальный инструмент, который позволяет изменить или дополнить поведение функций, методов и классов. Декораторы помогают сделать код более компактным, гибким и организованным.
+
+**Декоратор** — это функция, которая принимает другую функцию как аргумент и возвращает новую функцию с изменённым или дополненным поведением.
+Декораторы позволяют переиспользовать код и добавлять функциональность к функциям, методам и классам без изменения их исходного кода.
+
+Декораторы обозначаются знаком `@` перед названием функции-декоратора и указываются перед функцией, которую нужно изменить.
+
+```python
+@decorator_function
+def my_function():
+    pass
+```
+Этот код эквивалентен следующему:
+```python
+def my_function():
+    pass
+
+my_function = decorator_function(my_function)
+```
+
+Пример декоратора, который выводит сообщение до и после выполнения функции:
+```python
+def my_decorator(func):
+    def wrapper():
+        print("До вызова функции")
+        func()
+        print("После вызова функции")
+    return wrapper
+
+@my_decorator
+def say_hello():
+    print("Hello!")
+
+say_hello()
+# Вывод:
+# До вызова функции
+# Hello!
+# После вызова функции
+```
+
+Чтобы создать декоратор для функции с аргументами, нужно передать `*args` и `**kwargs` в `wrapper`.
+```python
+def my_decorator(func):
+    def wrapper(*args, **kwargs):
+        print("До вызова функции")
+        result = func(*args, **kwargs)
+        print("После вызова функции")
+        return result
+    return wrapper
+
+@my_decorator
+def greet(name):
+    print(f"Hello, {name}!")
+
+greet("Alice")
+# Вывод:
+# До вызова функции
+# Hello, Alice!
+# После вызова функции
+```
+
+Если функция возвращает результат, декоратор должен вернуть это значение, чтобы его можно было использовать.
+
+```python
+def my_decorator(func):
+    def wrapper(*args, **kwargs):
+        print("Вызов функции")
+        result = func(*args, **kwargs)
+        print("Функция завершена")
+        return result
+    return wrapper
+
+@my_decorator
+def add(a, b):
+    return a + b
+
+print(add(3, 5))
+# Вывод:
+# Вызов функции
+# Функция завершена
+# 8
+```
+
+Иногда нужно создать декоратор, который принимает параметры. Для этого нужно добавить ещё одну обёртку.
+
+```python
+def repeat(num_times):  # Декоратор с параметром
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(num_times):
+                result = func(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(3)
+def say_hi():
+    print("Hi!")
+
+say_hi()
+# Вывод:
+# Hi!
+# Hi!
+# Hi!
+```
+
+Чтобы сохранить имя, документацию и атрибуты оригинальной функции, используется декоратор `functools.wraps`.
+
+```python
+from functools import wraps
+
+def my_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print("Вызов декорированной функции")
+        return func(*args, **kwargs)
+    return wrapper
+
+@my_decorator
+def example():
+    """Эта функция делает что-то полезное"""
+    print("Пример работы")
+
+print(example.__name__)  # Вывод: example
+print(example.__doc__)   # Вывод: Эта функция делает что-то полезное
+```
+
+**Примеры полезных декораторов:**
+
+Логирующий декоратор
+```python
+from functools import wraps
+
+def log_function(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"Вызов функции {func.__name__} с аргументами {args} и {kwargs}")
+        return func(*args, **kwargs)
+    return wrapper
+
+@log_function
+def multiply(a, b):
+    return a * b
+
+print(multiply(3, 5))
+# Вывод:
+# Вызов функции multiply с аргументами (3, 5) и {}
+# 15
+```
+
+Проверка прав доступа
+
+```python
+def require_admin(func):
+    @wraps(func)
+    def wrapper(user_role, *args, **kwargs):
+        if user_role != "admin":
+            print("Доступ запрещен")
+            return None
+        return func(*args, **kwargs)
+    return wrapper
+
+@require_admin
+def delete_database():
+    print("База данных удалена!")
+
+delete_database("user")    # Вывод: Доступ запрещен
+delete_database("admin")   # Вывод: База данных удалена!
+```
+
+Декораторы можно использовать и для методов классов. Например, декоратор `@classmethod` для методов, которые работают с классом, и `@staticmethod` для методов, которые не используют `self` или `cls`.
+
+```python
+class MyClass:
+    @staticmethod
+    def static_method():
+        print("Это статический метод")
+
+    @classmethod
+    def class_method(cls):
+        print(f"Это метод класса {cls}")
+
+MyClass.static_method()  # Вывод: Это статический метод
+MyClass.class_method()   # Вывод: Это метод класса <class '__main__.MyClass'>
+```
+
+Можно использовать несколько декораторов для одной функции, тогда они применяются сверху вниз. Такие декораторы называются вложенными.
+
+```python
+def decorator1(func):
+    def wrapper(*args, **kwargs):
+        print("Декоратор 1")
+        return func(*args, **kwargs)
+    return wrapper
+
+def decorator2(func):
+    def wrapper(*args, **kwargs):
+        print("Декоратор 2")
+        return func(*args, **kwargs)
+    return wrapper
+
+@decorator1
+@decorator2
+def greet():
+    print("Hello!")
+
+greet()
+# Вывод:
+# Декоратор 1
+# Декоратор 2
+# Hello!
+```
+
+Декораторы в стандартной библиотеке Python:
+
+`@property`: для создания свойств в классах.
+`@staticmethod` и `@classmethod`: для объявления статических методов и методов класса.
+`@functools.lru_cache`: для кеширования результата функции (полезно для оптимизации часто вызываемых функций).
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=100)
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(fibonacci(50))  # Использует кеш для оптимизации
+```
