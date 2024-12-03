@@ -1334,3 +1334,196 @@ ORDER BY
 -- Считает количество пользователей и средний балл для каждой возрастной группы,
 -- сортирует группы по среднему баллу (по убыванию).
 ```
+
+## Команда JOIN - создание сводных отчетов
+
+Перед тем как начать работать с `JOIN`, важно разобраться в понятиях первичного ключа и внешнего ключа.
+
+Первичный ключ (`PRIMARY KEY`) — это уникальный идентификатор записи в таблице.
+Например, в таблице `customers` поле `customer_id` может быть первичным ключом, так как оно уникально для каждого клиента.
+
+Каждая строка должна иметь уникальное значение в этом столбце.
+Обычно используется с `AUTOINCREMENT` для автоматического увеличения значения.
+
+```sql
+CREATE TABLE customers (
+    customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+```
+
+Внешний ключ (`FOREIGN KEY`) — это поле, которое ссылается на первичный ключ другой таблицы.
+Например, в таблице `orders` поле `customer_id` может быть внешним ключом, ссылающимся на `customer_id` в таблице `customers`.
+
+```sql
+CREATE TABLE orders (
+    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER,
+    product TEXT,
+    FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
+);
+```
+`JOIN` используется для объединения данных из двух (или более) таблиц на основе логической связи между ними (обычно через первичный и внешний ключи).
+
+`INNER JOIN` возвращает только те строки, где есть совпадение между таблицами.
+
+Даны таблицы:
+`customers`
+
+customer_id	| name
+------------|-----
+1	| Иван
+2	| Мария
+3	| Алексей
+
+`orders`
+
+order_id	| customer_id	| product
+------------|---------------|--------
+101	| 1 | Телефон
+102	| 2	| Ноутбук
+103	| 4	| Планшет
+
+SQL-запрос:
+
+```sql
+SELECT
+    customers.name AS customer_name,
+    orders.product
+FROM
+    customers
+INNER JOIN
+    orders
+ON
+    customers.customer_id = orders.customer_id;
+```
+Результат:
+
+customer_name | product
+--------------|---------
+Иван | Телефон
+Мария | Ноутбук
+
+Пояснение:
+
+- `INNER JOIN` возвращает только совпадающие строки.
+- Строка с `customer_id` = 3 исключается, так как у Алексея нет заказов.
+
+ВАЖНО!
+
+`JOIN`, по умолчанию является `INNER JOIN`. Функционально это то же самое, что и `INNER JOIN`, но такая запись менее читаемая и не рекомендуется:
+
+```sql
+SELECT
+    customers.name,
+    orders.product
+FROM
+    customers, orders
+WHERE
+    customers.customer_id = orders.customer_id;
+```
+`LEFT JOIN` возвращает все строки из левой таблицы и только совпадающие строки из правой. Если совпадения нет, то значения из правой таблицы заполняются `NULL`.
+
+SQL-запрос:
+
+```sql
+SELECT
+    customers.name AS customer_name,
+    orders.product
+FROM
+    customers
+LEFT JOIN
+    orders
+ON
+    customers.customer_id = orders.customer_id;
+```
+
+Результат:
+
+customer_name | product
+--------------|---------
+Иван | Телефон
+Мария | Ноутбук
+Алексей | NULL
+
+Пояснение:
+
+- Все клиенты из таблицы `customers` включены в результат.
+- У Алексея нет заказа, поэтому значение product равно `NULL`.
+
+Если есть более двух таблиц, можно объединить их через несколько `JOIN`.
+
+Добавим таблицу `products`:
+
+product_id | product_name
+-----------|-------------
+1 | Телефон
+2 | Ноутбук
+
+Дополненная таблица `orders` с `product_id`:
+
+order_id | customer_id | product_id
+---------|-------------|-----------
+101 | 1 | 1
+102 | 2 | 2
+
+SQL-запрос:
+
+```sql
+SELECT
+    customers.name AS customer_name,
+    products.product_name
+FROM
+    customers
+INNER JOIN
+    orders
+ON
+    customers.customer_id = orders.customer_id
+INNER JOIN
+    products
+ON
+    orders.product_id = products.product_id;
+```
+
+Результат:
+
+customer_name | product_name
+--------------|--------------
+Иван | Телефон
+Мария | Ноутбук
+
+Пояснение:
+
+- `customers` связана с `orders` через `customer_id`.
+- `orders` связана с `products` через `product_id`.
+- Результат показывает имена клиентов и их заказы.
+
+
+Можно добавлять условия, чтобы отфильтровать данные.
+
+Пример:
+
+Вывести клиентов, которые заказали только ноутбуки.
+
+```sql
+SELECT
+    customers.name AS customer_name,
+    products.product_name
+FROM
+    customers
+INNER JOIN
+    orders
+ON
+    customers.customer_id = orders.customer_id
+INNER JOIN
+    products
+ON
+    orders.product_id = products.product_id
+WHERE
+    products.product_name = 'Ноутбук';
+```
+Результат:
+
+customer_name | product_name
+--------------|-------------
+Мария | Ноутбук
