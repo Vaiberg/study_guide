@@ -1888,3 +1888,228 @@ with sq.connect("test.db") as con:
     # Откатываем изменения (для примера)
     con.rollback()  # Отменяем изменения, сделанные после последнего commit
 ```
+
+## Использование курсора как итерируемого объекта
+
+Объект курсора в SQLite можно использовать как итерируемый объект для перебора строк, возвращаемых SQL-запросом.
+
+```python
+for row in cursor:
+    # обработка каждой строки
+```
+
+```python
+import sqlite3 as sq
+
+with sq.connect(":memory:") as con:  # база данных создается в памяти
+    cur = con.cursor()
+    cur.execute("CREATE TABLE users (id INTEGER, name TEXT)")
+    cur.executemany("INSERT INTO users VALUES (?, ?)", [(1, "Alice"), (2, "Bob"), (3, "Charlie")])
+
+    cur.execute("SELECT * FROM users")
+    for row in cur:  # перебираем строки
+        print(row)  # Вывод: (1, 'Alice'), (2, 'Bob'), (3, 'Charlie')
+```
+
+Каждая строка в результате запроса возвращается в виде кортежа.
+
+Использование курсора как итератора позволяет обрабатывать большие наборы данных без загрузки всех строк в память.
+
+## Свойство `row_factory` и объект `Row`
+
+Свойство `row_factory` позволяет изменить способ представления строк, возвращаемых запросами. Вместо кортежей можно использовать, например, словарь с ключами и значениями.
+
+Установка `row_factory` для возврата словарей:
+
+```python
+con.row_factory = sqlite3.Row
+```
+
+```python
+with sq.connect(":memory:") as con:
+    con.row_factory = sq.Row  # Устанавливаем row_factory для возврата строк как словарей
+    cur = con.cursor()
+    cur.execute("CREATE TABLE users (id INTEGER, name TEXT)")
+    cur.executemany("INSERT INTO users VALUES (?, ?)", [(1, "Alice"), (2, "Bob"), (3, "Charlie")])
+
+    cur.execute("SELECT * FROM users")
+    for row in cur:  # строки теперь доступны как словари
+        print(dict(row))  # Вывод: {'id': 1, 'name': 'Alice'}, и т.д.
+```
+
+- `sqlite3.Row` позволяет обращаться к данным как через индексы, так и через имена столбцов: `row["id"]` или `row[0]`.
+- Удобно, если требуется передать данные в `JSON` или работать с именованными полями.
+
+## Работа с изображениями
+
+Изображения и другие бинарные данные можно сохранять в SQLite, используя тип `BLOB` (Binary Large Object).
+
+Запись изображения:
+
+```python
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY, data BLOB)")
+
+    with open("image.png", "rb") as file:  # Открываем файл в бинарном режиме
+        blob_data = file.read()
+    cur.execute("INSERT INTO images (data) VALUES (?)", (blob_data,))
+```
+
+Чтение изображения:
+
+```python
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("SELECT data FROM images WHERE id = 1")
+    img_data = cur.fetchone()[0]
+
+    with open("output.png", "wb") as file:  # Сохраняем в файл
+        file.write(img_data)
+```
+
+- Изображения хранятся в виде бинарных данных (`BLOB`).
+- Размер базы данных может сильно увеличиваться при хранении больших файлов. В таких случаях лучше хранить пути к файлам.
+
+## Метод `binary()`
+
+`sqlite3.Binary` — это встроенный метод модуля SQLite в Python, который позволяет преобразовывать данные в бинарный объект. Этот метод используется для безопасного сохранения бинарных данных (например, изображений, аудио или видео) в базе данных SQLite, а также для их корректной обработки при записи.
+
+Преимущества использования `sqlite3.Binary`:
+
+- Безопасность: Обеспечивает правильное форматирование бинарных данных, что минимизирует риск повреждения информации.
+- Удобство: Преобразует данные в формат, понятный SQLite, упрощая их последующее сохранение.
+- Совместимость: Используется для хранения файлов в столбцах с типом `BLOB`.
+
+`sqlite3.Binary` оборачивает бинарные данные, чтобы их можно было передать в запрос SQL.
+
+Запись изображения в базу данных с использованием `sqlite3.Binary`:
+
+```python
+import sqlite3 as sq
+
+# Создаем соединение с базой данных
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY, data BLOB)")
+
+    # Читаем файл изображения в бинарном режиме
+    with open("image.png", "rb") as file:
+        binary_data = sq.Binary(file.read())  # Преобразуем данные в бинарный формат
+
+    # Сохраняем бинарные данные в базе данных
+    cur.execute("INSERT INTO images (data) VALUES (?)", (binary_data,))
+    print("Изображение успешно сохранено!")
+```
+
+- Открываем файл в бинарном режиме с помощью `open("image.png", "rb")`.
+- Преобразуем содержимое файла в объект `Binary` через `sqlite3.Binary`.
+- Передаем объект в запрос SQL (`INSERT INTO`), записывая его в столбец `BLOB`.
+
+
+Чтение изображения из базы данных:
+
+```python
+import sqlite3 as sq
+
+# Создаем соединение с базой данных
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+
+    # Извлекаем бинарные данные изображения
+    cur.execute("SELECT data FROM images WHERE id = 1")
+    binary_data = cur.fetchone()[0]
+
+    # Сохраняем извлеченные данные в новый файл
+    with open("output.png", "wb") as file:
+        file.write(binary_data)
+    print("Изображение успешно извлечено и сохранено!")
+```
+- Выполняем SQL-запрос для получения данных из столбца `BLOB`.
+- Данные возвращаются как `bytes`, которые можно сохранить в файл, используя режим `wb` (`write binary`).
+
+Можно ли записывать бинарные данные без `sqlite3.Binary`?
+
+- Да, можно напрямую передать данные в запрос SQL. Однако использование `sqlite3.Binary` гарантирует правильное преобразование данных, особенно при работе с нестандартными символами и кодировками. Это рекомендуемый способ.
+
+Какой тип данных использовать в таблице для изображений?
+
+- Для хранения изображений или других бинарных данных используется тип `BLOB`.
+
+Как узнать размер хранимого изображения?
+
+- Выполнить запрос, используя функцию `LENGTH`:
+
+    ```sql
+    SELECT LENGTH(data) FROM images WHERE id = 1;
+    ```
+
+
+Пример работы с несколькими изображениями:
+
+```python
+import sqlite3 as sq
+
+# Создаем соединение с базой данных
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY, name TEXT, data BLOB)")
+
+    # Добавляем несколько изображений
+    for img_name in ["image1.png", "image2.png"]:
+        with open(img_name, "rb") as file:
+            binary_data = sq.Binary(file.read())
+        cur.execute("INSERT INTO images (name, data) VALUES (?, ?)", (img_name, binary_data))
+
+    # Извлекаем все изображения
+    cur.execute("SELECT name, data FROM images")
+    for row in cur:
+        img_name, img_data = row
+        with open(f"copy_of_{img_name}", "wb") as file:
+            file.write(img_data)
+    print("Все изображения успешно извлечены!")
+```
+
+## Метод `iterdump()`
+
+Метод `iterdump()` создаёт итератор, который возвращает SQL-запросы для полного копирования содержимого базы данных.
+
+```python
+for line in con.iterdump():
+    print(line)
+```
+
+```python
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER, name TEXT)")
+    cur.executemany("INSERT INTO users VALUES (?, ?)", [(1, "Alice"), (2, "Bob")])
+
+    for line in con.iterdump():  # Экспорт базы данных
+        print(line)
+```
+
+- Полезно для создания резервных копий или переноса данных между базами.
+- Возвращает SQL-запросы как строки.
+
+## Создание базы данных в памяти (`:memory:`)
+
+SQLite поддерживает базы данных, созданные только в памяти. Они существуют только во время выполнения программы.
+
+```python
+sqlite3.connect(":memory:")
+```
+
+```python
+with sq.connect(":memory:") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE users (id INTEGER, name TEXT)")
+    cur.execute("INSERT INTO users VALUES (1, 'Alice')")
+
+    cur.execute("SELECT * FROM users")
+    print(cur.fetchall())  # [(1, 'Alice')]
+```
+
+- Быстрая работа, так как данные хранятся в оперативной памяти.
+- Удобно для временных данных и тестирования.
+- Все данные удаляются при завершении программы.
