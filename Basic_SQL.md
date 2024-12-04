@@ -1527,3 +1527,78 @@ WHERE
 customer_name | product_name
 --------------|-------------
 Мария | Ноутбук
+
+## Команда UNION - объединение таблиц
+
+`UNION` используется для объединения результатов двух или более запросов. Она создаёт сводный отчет, объединяя строки из разных таблиц (или запросов) в один результат.
+
+Все запросы, объединяемые с помощью `UNION`, должны иметь:
+- Одинаковое количество столбцов.
+- Порядок столбцов должен быть одинаковым во всех запросах.
+- Совпадающие типы данных в соответствующих столбцах.
+
+```sql
+SELECT column1, column2, ...
+FROM table1
+WHERE condition1
+UNION
+SELECT column1, column2, ...
+FROM table2
+WHERE condition2;
+```
+
+`UNION ALL` используется для объединения запросов, сохраняя дублирующиеся строки. Быстрее, чем `UNION`, так как не требует проверки уникальности строк.
+
+```sql
+SELECT column1, column2
+FROM table1
+UNION ALL
+SELECT column1, column2
+FROM table2;
+```
+
+Пример объединения списков клиентов из двух таблиц:
+
+```sql
+SELECT name, email
+FROM customers_2023
+UNION
+SELECT name, email
+FROM customers_2024;
+```
+Включены клиенты из обоих годов, без дублирования.
+
+Вывод тех же клиентов, но с дубликатами:
+
+```sql
+SELECT name, email
+FROM customers_2023
+UNION ALL
+SELECT name, email
+FROM customers_2024;
+```
+
+Объединение заказов, стоимость которых превышает определённую сумму:
+
+```sql
+SELECT product, price
+FROM orders_2023
+WHERE price > 500
+UNION
+SELECT product, price
+FROM orders_2024
+WHERE price > 500;
+```
+
+Сводный отчет о клиентах из одной таблицы и партнерах из другой:
+
+```sql
+SELECT name AS person, 'Customer' AS type
+FROM customers
+WHERE city = 'New York'
+UNION
+SELECT name AS person, 'Partner' AS type
+FROM partners
+WHERE city = 'New York';
+```
+Все клиенты и партнёры из Нью-Йорка, с указанием их типа ("`Customer`" или "`Partner`").
