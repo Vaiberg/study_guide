@@ -1738,3 +1738,153 @@ WHERE id IN (
     FROM orders
 );
 ```
+
+# Взаимодействие с СУБД SQLite через API модуля `sqlite3`
+
+## Метод `execute`
+
+Метод выполняет одиночный SQL-запрос, например, создание таблицы, вставку данных или выборку строк.
+
+```python
+cursor.execute(sql_query, parameters)
+```
+
+- `sql_query`: Строка с SQL-запросом.
+- `parameters`: Кортеж или словарь для подстановки данных вместо плейсхолдеров (`?`, `:param_name`).
+
+```python
+import sqlite3 as sq
+
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)")
+    cur.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
+    cur.execute("SELECT * FROM users WHERE name = ?", ("Alice",))
+    result = cur.fetchall()
+    print(result)  # [(1, 'Alice')]
+```
+
+Метод б езопасен для предотвращения SQL-инъекций благодаря плейсхолдерам (`?` или `:name`).
+
+Возвращает объект-итератор для выборки данных (`fetchall`, `fetchone`).
+
+## Метод `executemany()`
+
+Метод позволяет выполнить один и тот же запрос для нескольких наборов данных.
+
+```python
+cursor.executemany(sql_query, sequence_of_parameters)
+```
+
+- `sql_query`: Строка с SQL-запросом.
+- `sequence_of_parameters`: Список или другой итерируемый объект с параметрами для подстановки.
+
+```python
+data = [("Alice",), ("Bob",), ("Charlie",)]
+cur.executemany("INSERT INTO users (name) VALUES (?)", data)
+```
+
+Удобен для массового ввода данных.
+
+Быстрее, чем многократный вызов `execute()`.
+
+Метод `executescript()`
+
+Метод выполняет несколько SQL-запросов за один вызов. Подходит для выполнения скриптов.
+
+```python
+cursor.executescript(sql_script)
+```
+
+- `sql_script`: Строка с несколькими SQL-командами, разделёнными ;.
+
+```python
+cur.executescript("""
+    DROP TABLE IF EXISTS users;
+    CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
+    INSERT INTO users (name) VALUES ('Alice');
+""")
+```
+
+- Не поддерживает плейсхолдеры для подстановки параметров.
+- Используется для выполнения статических SQL-скриптов.
+
+## Метод `commit()`
+
+Фиксирует изменения в базе данных, сделанные после последнего `commit` или `rollback`.
+
+```python
+cur.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
+con.commit()  # Сохраняет изменения
+```
+
+- Изменения не сохраняются автоматически, если не используется контекстный менеджер `with`.
+- Если соединение разорвано до вызова `commit`, все несохранённые изменения будут потеряны.
+
+## Метод `rollback()`
+
+Отменяет все изменения, сделанные с момента последнего `commit`.
+
+```python
+try:
+    cur.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
+    raise Exception("Ошибка")  # Имитируем сбой
+    con.commit()
+except Exception:
+    con.rollback()  # Отменяет изменения
+```
+
+- Используется для управления транзакциями, чтобы откатить изменения в случае ошибок.
+
+- Полезен для обеспечения целостности данных.
+
+## Свойство `lastrowid`
+
+Содержит ID последней добавленной строки в таблице.
+
+```python
+cur.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
+print(cur.lastrowid)  # ID последней вставленной строки
+```
+- Удобно, если нужно получить ID строки, созданной при вставке.
+
+## Контекстный менеджер `with` и автосохранение
+
+При использовании `with`:
+
+- Метод `commit()` вызывается автоматически, когда выполнение блока завершается без ошибок.
+- Если возникает ошибка, вызывается `rollback()`.
+
+```python
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
+# Изменения автоматически сохранятся
+```
+
+Почему лучше использовать `with`?
+
+- Упрощает код.
+- Автоматически управляет транзакциями, минимизируя риск потери данных.
+
+Пример: Добавление, выборка, фиксация и откат
+
+```python
+import sqlite3 as sq
+
+with sq.connect("test.db") as con:
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)")
+
+    # Добавляем данные
+    cur.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
+    cur.executemany("INSERT INTO users (name) VALUES (?)", [("Bob",), ("Charlie",)])
+    print(f"Last inserted row ID: {cur.lastrowid}")
+
+    # Выбираем данные
+    cur.execute("SELECT * FROM users")
+    print(cur.fetchall())  # [(1, 'Alice'), (2, 'Bob'), (3, 'Charlie')]
+
+    # Откатываем изменения (для примера)
+    con.rollback()  # Отменяем изменения, сделанные после последнего commit
+```
